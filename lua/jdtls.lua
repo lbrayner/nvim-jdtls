@@ -824,6 +824,38 @@ function M.organize_imports()
 end
 
 
+-- Open type hierarchy
+function M.java_open_type_hierarchy(resolve_depth, reuse_win, on_list)
+  local function handler(err, result)
+    assert(not err, vim.inspect(err))
+    print("parents " .. #result.parents) -- TODO remove
+    local locations = vim.tbl_map(function(parent)
+      return { uri = parent.uri, range = parent.range }
+    end, result.parents)
+    print("locations " .. #locations) -- TODO remove
+    if #locations == 1  then
+      return vim.lsp.util.jump_to_location(locations[1], offset_encoding, reuse_win)
+    end
+    local title = 'Type hierarchy'
+    local items = vim.lsp.util.locations_to_items(locations, offset_encoding)
+    if on_list then
+      assert(type(on_list) == 'function', 'on_list is not a function')
+      on_list({ title = title, items = items })
+    end
+    vim.fn.setqflist({}, ' ', { title = title, items = items })
+  end
+  local position = vim.lsp.util.make_position_params(0, offset_encoding)
+  local command = {
+    command = 'java.navigate.openTypeHierarchy',
+    arguments = {
+      vim.fn.json_encode(position), -- TextDocumentPositionParams object
+      '1', -- direction: Children(0), Parents(1), Both(2)
+      tostring(resolve_depth),
+    },
+  }
+  execute_command(command, handler)
+end
+
 ---@private
 function M._complete_compile()
   return 'full\nincremental'
