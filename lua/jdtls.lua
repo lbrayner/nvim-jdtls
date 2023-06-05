@@ -833,16 +833,17 @@ function M.java_open_type_hierarchy(resolve_depth, reuse_win, on_list)
       return { uri = parent.uri, range = parent.range }
     end, result.parents)
     print("locations " .. #locations) -- TODO remove
-    if #locations == 1  then
-      return vim.lsp.util.jump_to_location(locations[1], offset_encoding, reuse_win)
-    end
     local title = 'Type hierarchy'
     local items = vim.lsp.util.locations_to_items(locations, offset_encoding)
     if on_list then
       assert(type(on_list) == 'function', 'on_list is not a function')
-      on_list({ title = title, items = items })
+      return on_list({ title = title, items = items })
+    end
+    if #locations == 1  then
+      return vim.lsp.util.jump_to_location(locations[1], offset_encoding, reuse_win)
     end
     vim.fn.setqflist({}, ' ', { title = title, items = items })
+    vim.api.nvim_command('botright copen')
   end
   local position = vim.lsp.util.make_position_params(0, offset_encoding)
   local command = {
