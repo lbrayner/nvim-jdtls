@@ -828,11 +828,9 @@ end
 function M.java_open_type_hierarchy(resolve_depth, reuse_win, on_list)
   local function handler(err, result)
     assert(not err, vim.inspect(err))
-    print("parents " .. #result.parents) -- TODO remove
     local locations = vim.tbl_map(function(parent)
       return { uri = parent.uri, range = parent.range }
     end, result.parents)
-    print("locations " .. #locations) -- TODO remove
     local title = 'Type hierarchy'
     local items = vim.lsp.util.locations_to_items(locations, offset_encoding)
     if on_list then
