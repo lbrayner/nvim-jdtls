@@ -829,9 +829,7 @@ function M.java_open_type_hierarchy(resolve_depth, reuse_win, on_list)
   local function handler(err, result)
     assert(not err, vim.inspect(err))
     if not result or not result.parents then return vim.notify('Type hierarchy: no results.') end
-    local locations = vim.tbl_map(function(parent)
-      return { uri = parent.uri, range = parent.range }
-    end, result.parents)
+    local locations = result.parents
     local title = 'Type hierarchy'
     local items = vim.lsp.util.locations_to_items(locations, offset_encoding)
     if on_list then
@@ -855,6 +853,7 @@ function M.java_open_type_hierarchy(resolve_depth, reuse_win, on_list)
   }
   execute_command(command, handler)
 end
+
 
 ---@private
 function M._complete_compile()
