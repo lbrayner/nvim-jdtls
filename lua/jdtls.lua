@@ -344,6 +344,22 @@ local function move_instance_method(command, code_action_params)
   end)
 end
 
+function M.search_symbols(project, query)
+  local params = {
+    query = query,
+    projectName = project,
+    sourceOnly = true,
+  }
+  request(0, 'java/searchSymbols', params, function(err, result, ctx)
+    assert(not err, err and err.message or vim.inspect(err))
+    if not result or #result == 0 then
+      print("Couldn't find any symbols")
+      return
+    end
+    print('search_symbols '..vim.inspect(result))
+  end)
+end
+
 local function search_symbols(project, enclosing_type_name, on_selection)
   local params = {
     query = '*',
