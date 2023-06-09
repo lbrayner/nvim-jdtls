@@ -855,6 +855,57 @@ function M.java_open_type_hierarchy(resolve_depth, reuse_win, on_list)
 end
 
 
+-- Type hierarchy
+function M.java_type_hierarchy(reuse_win, on_list)
+  local function resolve_command(result)
+    return {
+      command = 'java.navigate.resolveTypeHierarchy',
+      arguments = {
+        vim.fn.json_encode(result), -- TypeHierarchyItem object
+        "1", -- direction: Children(0), Parents(1), Both(2)
+        "1", -- resolveDepth
+      },
+    }
+  end
+  local function resolve_handler(err, result)
+    assert(not err, vim.inspect(err))
+    local parent_classes = {}
+    if result and result.parents then
+      parent_classes = vim.tbl_filter(function(parent)
+        -- org.eclipse.lsp4j.SymbolKind.Class(5)
+        return parent.kind == 5 and parent.detail..'.'..parent.name ~= 'java.lang.Object'
+      end, result.parents)
+    end
+    if #parent_classes == 0 then return vim.notify('Type hierarchy: no results.') end
+    local locations = parent_classes
+    local title = 'Type hierarchy'
+    local items = vim.lsp.util.locations_to_items(locations, offset_encoding)
+    if on_list then
+      assert(type(on_list) == 'function', 'on_list is not a function')
+      return on_list({ title = title, items = items })
+    end
+    if #locations == 1  then
+      return vim.lsp.util.jump_to_location(locations[1], offset_encoding, reuse_win)
+    end
+    vim.fn.setqflist({}, ' ', { title = title, items = items })
+    vim.api.nvim_command('botright copen')
+  end
+  local position = vim.lsp.util.make_position_params(0, offset_encoding)
+  local command = {
+    command = 'java.navigate.openTypeHierarchy',
+    arguments = {
+      vim.fn.json_encode(position), -- TextDocumentPositionParams object
+      "1", -- direction: Children(0), Parents(1), Both(2)
+      "0", -- resolveDepth
+    },
+  }
+  execute_command(command, function(err, result)
+    assert(not err, vim.inspect(err))
+    execute_command(resolve_command(result), resolve_handler)
+  end)
+end
+
+
 -- Search symbols
 function M.search_symbols(project, query)
   local params = {
