@@ -900,7 +900,9 @@ function M.java_type_hierarchy(reuse_win, on_list)
 
     if #hierarchy == 0 then return print('Type hierarchy: no results.') end
 
-    local locations = hierarchy
+    local locations = vim.tbl_map(function(parent)
+      return { uri = parent.uri, range = parent.selectionRange }
+    end, hierarchy)
     hierarchy = nil
     local title = 'Type hierarchy'
 
