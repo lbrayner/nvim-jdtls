@@ -858,6 +858,10 @@ end
 
 
 -- Type hierarchy
+local allowed_symbol_kinds = {
+  [5] = "Class",      -- org.eclipse.lsp4j.SymbolKind.Class
+  [11] = "Interface", -- org.eclipse.lsp4j.SymbolKind.Interface
+}
 local maximum_resolve_depth = 10
 
 function M.java_type_hierarchy(reuse_win, on_list)
@@ -877,20 +881,21 @@ function M.java_type_hierarchy(reuse_win, on_list)
   local function resolve_handler(err, result)
     assert(not err, vim.inspect(err))
 
-    local parent_classes = {}
+    local parent_types = {}
     if result and result.parents then
-      parent_classes = vim.tbl_filter(function(parent)
+      parent_types = vim.tbl_filter(function(parent)
         -- org.eclipse.lsp4j.SymbolKind.Class(5)
-        return parent.kind == 5 and parent.detail..'.'..parent.name ~= 'java.lang.Object'
+        return vim.tbl_get(allowed_symbol_kinds, result.kind) and
+          parent.detail..'.'..parent.name ~= 'java.lang.Object'
       end, result.parents)
     end
 
-    assert(#parent_classes <= 1, 'Type hierarchy: too many parent classes')
+    assert(#parent_types <= 1, 'Type hierarchy: too many parent classes')
 
-    if #parent_classes > 0 then
+    if #parent_types > 0 then
       if #hierarchy <= maximum_resolve_depth then
-        table.insert(hierarchy, parent_classes[1])
-        return execute_command(resolve_command(parent_classes[1]), resolve_handler)
+        table.insert(hierarchy, parent_types[1])
+        return execute_command(resolve_command(parent_types[1]), resolve_handler)
       else
         vim.notify(string.format('Type hierarchy: maximum resolve depth is %d.',
             maximum_resolve_depth),
@@ -935,7 +940,16 @@ function M.java_type_hierarchy(reuse_win, on_list)
   }
   execute_command(command, function(err, result)
     assert(not err, vim.inspect(err))
-    execute_command(resolve_command(result), resolve_handler)
+    if not result then
+      return vim.notify('Type hierarchy: openTypeHierarchy got no results',
+        vim.log.levels.ERROR)
+    end
+    if vim.tbl_get(allowed_symbol_kinds, result.kind) then
+      execute_command(resolve_command(result), resolve_handler)
+    else
+      vim.notify(string.format('Type hierarchy: only %s allowed.', vim.tbl_values(allowed_symbol_kinds)),
+        vim.log.levels.WARN)
+    end
   end)
 end
 
