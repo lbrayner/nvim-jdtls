@@ -867,17 +867,34 @@ function M.java_type_hierarchy(reuse_win, on_list)
       },
     }
   end
+  local hierarchy = {}
   local function resolve_handler(err, result)
     assert(not err, vim.inspect(err))
+    if #hierarchy > 10 then
+      print('hierarchy '..vim.inspect(hierarchy))
+      error("too many recursions")
+    end
     local parent_classes = {}
     if result and result.parents then
       parent_classes = vim.tbl_filter(function(parent)
+        -- print(parent.detail..parent.name)
         -- org.eclipse.lsp4j.SymbolKind.Class(5)
         return parent.kind == 5 and parent.detail..'.'..parent.name ~= 'java.lang.Object'
       end, result.parents)
     end
-    if #parent_classes == 0 then return vim.notify('Type hierarchy: no results.') end
-    local locations = parent_classes
+    if #parent_classes > 0 then
+      print('parent_classes '..#parent_classes..' hierarchy '..#hierarchy)
+      for _, v in ipairs(parent_classes) do
+        table.insert(hierarchy, v)
+      end
+      local type_hierarchy_item = parent_classes[1]
+      return execute_command(resolve_command(type_hierarchy_item), resolve_handler)
+    end
+    if #hierarchy == 0 then return vim.notify('Type hierarchy: no results.') end
+    print('hierarchy '..#hierarchy)
+    -- print('resolveTypeHierarchy result '..vim.inspect(result))
+    local locations = hierarchy
+    hierarchy = nil
     local title = 'Type hierarchy'
     local items = vim.lsp.util.locations_to_items(locations, offset_encoding)
     if on_list then
@@ -901,6 +918,7 @@ function M.java_type_hierarchy(reuse_win, on_list)
   }
   execute_command(command, function(err, result)
     assert(not err, vim.inspect(err))
+    -- print('openTypeHierarchy result '..vim.inspect(result))
     execute_command(resolve_command(result), resolve_handler)
   end)
 end
