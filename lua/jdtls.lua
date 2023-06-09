@@ -880,18 +880,21 @@ function M.java_type_hierarchy(reuse_win, on_list)
     end
     assert(#parent_classes <= 1, 'Type hierarchy: too many parent classes')
     if #parent_classes > 0 then
-      if #parent_classes <= maximum_resolve_depth then
+      if #hierarchy <= maximum_resolve_depth then
         table.insert(hierarchy, parent_classes[1])
         return execute_command(resolve_command(parent_classes[1]), resolve_handler)
+      else
+        vim.notify('Type hierarchy: maximum resolve depth is '..maximum_resolve_depth, vim.log.levels.WARNING)
       end
-    else
-      vim.notify('Type hierarchy: maximum resolve depth is '..maximum_resolve_depth, vim.log.levels.WARNING)
     end
     if #hierarchy == 0 then return vim.notify('Type hierarchy: no results.') end
     local locations = hierarchy
     hierarchy = nil
     local title = 'Type hierarchy'
-    local items = vim.lsp.util.locations_to_items(locations, offset_encoding)
+    local items = {}
+    for _, location in ipairs(locations) do -- Preserving table order
+      table.insert(items, vim.lsp.util.locations_to_items({ location }, offset_encoding)[1])
+    end
     if on_list then
       assert(type(on_list) == 'function', 'on_list is not a function')
       return on_list({ title = title, items = items })
