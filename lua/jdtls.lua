@@ -859,6 +859,7 @@ end
 
 -- Type hierarchy
 local maximum_resolve_depth = 10
+
 function M.java_type_hierarchy(reuse_win, on_list)
   local function resolve_command(result)
     return {
@@ -870,9 +871,12 @@ function M.java_type_hierarchy(reuse_win, on_list)
       },
     }
   end
+
   local hierarchy = {}
+
   local function resolve_handler(err, result)
     assert(not err, vim.inspect(err))
+
     local parent_classes = {}
     if result and result.parents then
       parent_classes = vim.tbl_filter(function(parent)
@@ -880,7 +884,9 @@ function M.java_type_hierarchy(reuse_win, on_list)
         return parent.kind == 5 and parent.detail..'.'..parent.name ~= 'java.lang.Object'
       end, result.parents)
     end
+
     assert(#parent_classes <= 1, 'Type hierarchy: too many parent classes')
+
     if #parent_classes > 0 then
       if #hierarchy <= maximum_resolve_depth then
         table.insert(hierarchy, parent_classes[1])
@@ -889,24 +895,31 @@ function M.java_type_hierarchy(reuse_win, on_list)
         vim.notify('Type hierarchy: maximum resolve depth is '..maximum_resolve_depth, vim.log.levels.WARNING)
       end
     end
+
     if #hierarchy == 0 then return vim.notify('Type hierarchy: no results.') end
+
     local locations = hierarchy
     hierarchy = nil
     local title = 'Type hierarchy'
+
     local items = {}
     for _, location in ipairs(locations) do -- Preserving table order
       table.insert(items, vim.lsp.util.locations_to_items({ location }, offset_encoding)[1])
     end
+
     if on_list then
       assert(type(on_list) == 'function', 'on_list is not a function')
       return on_list({ title = title, items = items })
     end
+
     if #locations == 1  then
       return vim.lsp.util.jump_to_location(locations[1], offset_encoding, reuse_win)
     end
+
     vim.fn.setqflist({}, ' ', { title = title, items = items })
     vim.api.nvim_command('botright copen')
   end
+
   local position = vim.lsp.util.make_position_params(0, offset_encoding)
   local command = {
     command = 'java.navigate.openTypeHierarchy',
