@@ -856,6 +856,7 @@ end
 
 
 -- Type hierarchy
+local maximum_resolve_depth = 10
 function M.java_type_hierarchy(reuse_win, on_list)
   local function resolve_command(result)
     return {
@@ -870,29 +871,23 @@ function M.java_type_hierarchy(reuse_win, on_list)
   local hierarchy = {}
   local function resolve_handler(err, result)
     assert(not err, vim.inspect(err))
-    if #hierarchy > 10 then
-      print('hierarchy '..vim.inspect(hierarchy))
-      error("too many recursions")
-    end
     local parent_classes = {}
     if result and result.parents then
       parent_classes = vim.tbl_filter(function(parent)
-        -- print(parent.detail..parent.name)
         -- org.eclipse.lsp4j.SymbolKind.Class(5)
         return parent.kind == 5 and parent.detail..'.'..parent.name ~= 'java.lang.Object'
       end, result.parents)
     end
+    assert(#parent_classes <= 1, 'Type hierarchy: too many parent classes')
     if #parent_classes > 0 then
-      print('parent_classes '..#parent_classes..' hierarchy '..#hierarchy)
-      for _, v in ipairs(parent_classes) do
-        table.insert(hierarchy, v)
+      if #parent_classes <= maximum_resolve_depth then
+        table.insert(hierarchy, parent_classes[1])
+        return execute_command(resolve_command(parent_classes[1]), resolve_handler)
       end
-      local type_hierarchy_item = parent_classes[1]
-      return execute_command(resolve_command(type_hierarchy_item), resolve_handler)
+    else
+      vim.notify('Type hierarchy: maximum resolve depth is '..maximum_resolve_depth, vim.log.levels.WARNING)
     end
     if #hierarchy == 0 then return vim.notify('Type hierarchy: no results.') end
-    print('hierarchy '..#hierarchy)
-    -- print('resolveTypeHierarchy result '..vim.inspect(result))
     local locations = hierarchy
     hierarchy = nil
     local title = 'Type hierarchy'
@@ -918,7 +913,6 @@ function M.java_type_hierarchy(reuse_win, on_list)
   }
   execute_command(command, function(err, result)
     assert(not err, vim.inspect(err))
-    -- print('openTypeHierarchy result '..vim.inspect(result))
     execute_command(resolve_command(result), resolve_handler)
   end)
 end
