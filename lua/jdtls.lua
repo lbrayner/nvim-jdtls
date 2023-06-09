@@ -884,7 +884,6 @@ function M.java_type_hierarchy(reuse_win, on_list)
     local parent_types = {}
     if result and result.parents then
       parent_types = vim.tbl_filter(function(parent)
-        -- org.eclipse.lsp4j.SymbolKind.Class(5)
         return vim.tbl_get(allowed_symbol_kinds, result.kind) and
           parent.detail..'.'..parent.name ~= 'java.lang.Object'
       end, result.parents)
