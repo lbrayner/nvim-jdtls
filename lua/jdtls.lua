@@ -892,11 +892,13 @@ function M.java_type_hierarchy(reuse_win, on_list)
         table.insert(hierarchy, parent_classes[1])
         return execute_command(resolve_command(parent_classes[1]), resolve_handler)
       else
-        vim.notify('Type hierarchy: maximum resolve depth is '..maximum_resolve_depth, vim.log.levels.WARNING)
+        vim.notify(string.format('Type hierarchy: maximum resolve depth is %d.',
+            maximum_resolve_depth),
+          vim.log.levels.WARN)
       end
     end
 
-    if #hierarchy == 0 then return vim.notify('Type hierarchy: no results.') end
+    if #hierarchy == 0 then return print('Type hierarchy: no results.') end
 
     local locations = hierarchy
     hierarchy = nil
