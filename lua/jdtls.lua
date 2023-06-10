@@ -841,6 +841,7 @@ function M.java_type_hierarchy(reuse_win, on_list)
 
   local hierarchy = {}
   local depth = 0
+  local open_type_hierarchy
 
   local function resolve_handler(err, result)
     assert(not err, vim.inspect(err))
@@ -892,10 +893,15 @@ function M.java_type_hierarchy(reuse_win, on_list)
       return { uri = parent.uri, range = parent.selectionRange }
     end, hierarchy)
 
+    local title = string.format('Type hierarchy: %s.%s', open_type_hierarchy.detail, open_type_hierarchy.name)
+    if vim.tbl_get(open_type_hierarchy, 'data', 'method_name') then
+      title = string.format('%s.%s', title, open_type_hierarchy.data.method_name)
+    end
+
     hierarchy = nil
     depth = nil
+    open_type_hierarchy = nil
 
-    local title = 'Type hierarchy'
     local items = {}
     for _, location in ipairs(locations) do -- Preserving table order
       table.insert(items, vim.lsp.util.locations_to_items({ location }, offset_encoding)[1])
@@ -929,6 +935,7 @@ function M.java_type_hierarchy(reuse_win, on_list)
       return vim.notify('Type hierarchy: openTypeHierarchy returned no results',
         vim.log.levels.ERROR)
     end
+    open_type_hierarchy = result
     execute_command(resolve_command(result), resolve_handler)
   end)
 end
