@@ -873,13 +873,14 @@ function M.java_type_hierarchy(reuse_win, on_list)
   end
 
   local hierarchy = {}
+  local depth = 0
 
   local function resolve_handler(err, result)
     assert(not err, vim.inspect(err))
+    depth = depth + 1
 
     if #result.parents > 0 then
-      -- TODO filter interfaces
-      if #hierarchy > maximum_resolve_depth then
+      if depth > maximum_resolve_depth then
         vim.notify(string.format('Type hierarchy: maximum resolve depth is %d.',
             maximum_resolve_depth),
           vim.log.levels.WARN)
@@ -894,7 +895,8 @@ function M.java_type_hierarchy(reuse_win, on_list)
       local parent = parent_classes[1]
       if not parent then
         assert(#result.parents == 1, 'Type hierarchy: could not determine parent')
-        -- Symbol is a Method
+        -- Symbol at point is a org.eclipse.lsp4j.SymbolKind.Method, parent is
+        -- a org.eclipse.lsp4j.SymbolKind.Interface
         parent = result.parents[1]
       end
 
@@ -909,9 +911,11 @@ function M.java_type_hierarchy(reuse_win, on_list)
     local locations = vim.tbl_map(function(parent)
       return { uri = parent.uri, range = parent.selectionRange }
     end, hierarchy)
-    hierarchy = nil
-    local title = 'Type hierarchy'
 
+    hierarchy = nil
+    depth = nil
+
+    local title = 'Type hierarchy'
     local items = {}
     for _, location in ipairs(locations) do -- Preserving table order
       table.insert(items, vim.lsp.util.locations_to_items({ location }, offset_encoding)[1])
