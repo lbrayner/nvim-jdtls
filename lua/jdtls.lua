@@ -852,12 +852,10 @@ function M.java_type_hierarchy(reuse_win, on_list)
       return parent.kind ~= 21
     end, result.parents)
 
-    if #parents > 0 then
-      if depth > maximum_resolve_depth then
-        vim.notify(string.format('Type hierarchy: maximum resolve depth is %d.',
-            maximum_resolve_depth),
-          vim.log.levels.WARN)
-      end
+    if #parents > 0 and depth > maximum_resolve_depth then
+      vim.notify(string.format('Type hierarchy: maximum resolve depth is %d.', maximum_resolve_depth),
+        vim.log.levels.WARN)
+    elseif #parents > 0 then
       local parent_classes = vim.tbl_filter(function(parent)
         -- org.eclipse.lsp4j.SymbolKind.Class(5)
         return parent.kind == 5
