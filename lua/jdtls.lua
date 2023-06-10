@@ -824,39 +824,6 @@ function M.organize_imports()
 end
 
 
--- Open type hierarchy
-function M.java_open_type_hierarchy(resolve_depth, reuse_win, on_list)
-  local function handler(err, result)
-    assert(not err, vim.inspect(err))
-    if not result or not result.parents then return vim.notify('Type hierarchy: no results.') end
-    local locations = vim.tbl_map(function(parent)
-      return { uri = parent.uri, range = parent.selectionRange }
-    end, result.parents)
-    local title = 'Type hierarchy'
-    local items = vim.lsp.util.locations_to_items(locations, offset_encoding)
-    if on_list then
-      assert(type(on_list) == 'function', 'on_list is not a function')
-      return on_list({ title = title, items = items })
-    end
-    if #locations == 1  then
-      return vim.lsp.util.jump_to_location(locations[1], offset_encoding, reuse_win)
-    end
-    vim.fn.setqflist({}, ' ', { title = title, items = items })
-    vim.api.nvim_command('botright copen')
-  end
-  local position = vim.lsp.util.make_position_params(0, offset_encoding)
-  local command = {
-    command = 'java.navigate.openTypeHierarchy',
-    arguments = {
-      vim.fn.json_encode(position), -- TextDocumentPositionParams object
-      '1', -- direction: Children(0), Parents(1), Both(2)
-      tostring(resolve_depth),
-    },
-  }
-  execute_command(command, handler)
-end
-
-
 -- Type hierarchy
 local maximum_resolve_depth = 10
 
@@ -950,24 +917,6 @@ function M.java_type_hierarchy(reuse_win, on_list)
         vim.log.levels.ERROR)
     end
     execute_command(resolve_command(result), resolve_handler)
-  end)
-end
-
-
--- Search symbols
-function M.search_symbols(project, query)
-  local params = {
-    query = query,
-    projectName = project,
-    sourceOnly = true,
-  }
-  request(0, 'java/searchSymbols', params, function(err, result, ctx)
-    assert(not err, err and err.message or vim.inspect(err))
-    if not result or #result == 0 then
-      print("Couldn't find any symbols")
-      return
-    end
-    print('search_symbols '..vim.inspect(result))
   end)
 end
 
