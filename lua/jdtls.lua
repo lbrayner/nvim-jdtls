@@ -846,7 +846,12 @@ function M.java_type_hierarchy(reuse_win, on_list)
     assert(not err, vim.inspect(err))
     depth = depth + 1
 
-    if #result.parents > 0 then
+    local parents = vim.tbl_filter(function(parent)
+      -- Filtering out org.eclipse.lsp4j.SymbolKind.Null(21) items
+      return parent.kind ~= 21
+    end, result.parents)
+
+    if #parents > 0 then
       if depth > maximum_resolve_depth then
         vim.notify(string.format('Type hierarchy: maximum resolve depth is %d.',
             maximum_resolve_depth),
@@ -855,19 +860,20 @@ function M.java_type_hierarchy(reuse_win, on_list)
       local parent_classes = vim.tbl_filter(function(parent)
         -- org.eclipse.lsp4j.SymbolKind.Class(5)
         return parent.kind == 5
-      end, result.parents)
+      end, parents)
 
       assert(#parent_classes <= 1, 'Type hierarchy: more than one parent class')
 
       local parent = parent_classes[1]
       if not parent then
-        assert(#result.parents == 1, 'Type hierarchy: could not determine parent')
+        assert(#parents == 1, string.format('Type hierarchy: could not determine parent with result %s',
+          vim.inspect(result)))
         -- Symbol at point is a org.eclipse.lsp4j.SymbolKind.Method, parent is
         -- a org.eclipse.lsp4j.SymbolKind.Interface
-        parent = result.parents[1]
+        parent = parents[1]
       end
 
-      for _, parent in ipairs(result.parents) do
+      for _, parent in ipairs(parents) do
         table.insert(hierarchy, parent)
       end
       return execute_command(resolve_command(parent), resolve_handler)
