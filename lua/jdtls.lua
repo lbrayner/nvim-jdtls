@@ -881,6 +881,11 @@ function M.java_type_hierarchy(reuse_win, on_list)
 
     if #hierarchy == 0 then return print('Type hierarchy: no results.') end
 
+    local root = hierarchy[#hierarchy]
+    if root.detail..'.'..root.name == 'java.lang.Object' then
+      table.remove(hierarchy) -- Pop the top
+    end
+
     local locations = vim.tbl_map(function(parent)
       return { uri = parent.uri, range = parent.selectionRange }
     end, hierarchy)
