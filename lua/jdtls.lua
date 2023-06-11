@@ -832,9 +832,9 @@ function M.java_type_hierarchy(reuse_win, on_list)
     return {
       command = 'java.navigate.resolveTypeHierarchy',
       arguments = {
-        vim.fn.json_encode(result), -- TypeHierarchyItem object
-        "1", -- direction: Children(0), Parents(1), Both(2)
-        "1", -- resolveDepth
+        vim.fn.json_encode(result), -- toResolve: TypeHierarchyItem
+        '1', -- direction: Children(0), Parents(1), Both(2)
+        '1', -- resolveDepth
       },
     }
   end
@@ -922,9 +922,9 @@ function M.java_type_hierarchy(reuse_win, on_list)
   local command = {
     command = 'java.navigate.openTypeHierarchy',
     arguments = {
-      vim.fn.json_encode(position), -- TextDocumentPositionParams object
-      "1", -- direction: Children(0), Parents(1), Both(2)
-      "0", -- resolveDepth
+      vim.fn.json_encode(position), -- textParams: TextDocumentPositionParams
+      '1', -- direction: Children(0), Parents(1), Both(2)
+      '0', -- resolveDepth
     },
   }
   execute_command(command, function(err, result)
