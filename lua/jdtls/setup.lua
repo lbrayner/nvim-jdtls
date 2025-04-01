@@ -340,55 +340,7 @@ function M.start_or_attach(config, opts, start_opts)
     or vim.fn.getcwd()
   )
   config.handlers = config.handlers or {}
-  local status_handler = config.handlers["language/status"] or status_callback
-  config.handlers['language/status'] = function(err, result, ctx)
-    pcall(status_handler, err, result)
-    if result.type == "ServiceReady" then
-      local setting = "org.eclipse.jdt.ls.core.sourcePaths"
-      local params = {
-        command = "java.project.getSettings",
-        arguments = {
-          vim.uri_from_bufnr(bufnr),
-          {
-            setting
-          }
-        }
-      }
-      local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
-      client = util.add_client_methods(client)
-      local client_id = client.id
-
-      ---@param err0 lsp.ResponseError?
-      ---@param settings table?
-      local function on_settings(err0, settings)
-        if err0 or not settings then
-          local msg = "Couldn't retrieve source path settings. Can't set 'path' (err=%s)"
-          local errmsg = err0 and err0.message or "unknown"
-          vim.notify(string.format(msg, errmsg), vim.log.levels.INFO)
-          return
-        end
-        local paths = settings[setting]
-        for i, path in ipairs(paths) do
-          paths[i] = vim.fn.fnamemodify(path, ":.") .. "/**"
-        end
-        local path = table.concat(paths, ",")
-        vim.bo[bufnr].path = path
-        local augroup = api.nvim_create_augroup("jdtls-" .. tostring(client.id), {})
-        local cmds = api.nvim_get_autocmds({ group = augroup, event = "LspAttach" })
-        if not next(cmds) then
-          api.nvim_create_autocmd("LspAttach", {
-            callback = function(args)
-              if args.data.client_id == client_id then
-                vim.bo[args.buf].path = path
-              end
-            end
-          })
-        end
-      end
-
-      client:request("workspace/executeCommand", params, on_settings, bufnr)
-    end
-  end
+  config.handlers['language/status'] = config.handlers['language/status'] or status_callback
   config.handlers['workspace/configuration'] = config.handlers['workspace/configuration'] or configuration_handler
   local capabilities = vim.tbl_deep_extend('keep', config.capabilities or {}, lsp.protocol.make_client_capabilities())
   local extra_code_action_literals = {
