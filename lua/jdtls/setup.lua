@@ -1,4 +1,27 @@
-local api = vim.api
+local api
+
+if vim.fn.exists(":JdtShowLogs") == 0 then
+  local api_mt = {
+    __index = function(_, key)
+      if vim.list_contains(
+        {
+          "nvim_buf_create_user_command",
+          "nvim_command",
+          "nvim_create_user_command",
+        }, key) then
+        return function() end -- noop
+      end
+      return vim.api[key]
+    end,
+    __newindex = function()
+      error("Cannot add item")
+    end,
+  }
+  api = setmetatable({}, api_mt)
+else
+  api = vim.api
+end
+
 local lsp = vim.lsp
 local uv = vim.loop
 local util = require('jdtls.util')
@@ -6,7 +29,7 @@ local M = {}
 local URI_SCHEME_PATTERN = '^([a-zA-Z]+[a-zA-Z0-9+-.]*)://.*'
 
 local status_callback = function(_, result)
-  api.nvim_command(string.format(':echohl Function | echo "%s" | echohl None',
+  vim.api.nvim_command(string.format(':echohl Function | echo "%s" | echohl None',
                                 string.sub(result.message, 1, vim.v.echospace)))
 end
 
