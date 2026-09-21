@@ -1020,11 +1020,7 @@ end
 --- module of the current buffer.
 function M.update_project_config()
   local params = { uri = vim.uri_from_bufnr(0) }
-  request(0, 'java/projectConfigurationUpdate', params, function(err)
-    if err then
-      print('Could not update project configuration: ' .. err.message)
-    end
-  end)
+  vim.lsp.buf_notify(0, 'java/projectConfigurationUpdate', params)
 end
 
 --- Process changes made to the Gradle or Maven configuration of one or more projects.
